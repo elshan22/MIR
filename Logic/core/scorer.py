@@ -67,6 +67,7 @@ class Scorer:
         idf = self.idf.get(term, None)
         if idf is None:
             self.idf[term] = np.log2((self.N + 0.5) / (len(self.index[term]) + 0.5)) if term in self.index else 0
+            idf = self.idf[term]
         return idf
     
     def get_query_tfs(self, query):
