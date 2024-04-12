@@ -1,6 +1,7 @@
 from .indexes_enum import Indexes, Index_types
 from .index_reader import Index_reader
 import json
+from collections import defaultdict
 
 
 class Tiered_index:
@@ -58,16 +59,17 @@ class Tiered_index:
             raise ValueError("Invalid index type")
 
         current_index = self.index[index_name]
-        first_tier = {}
-        second_tier = {}
-        third_tier = {}
-        for key, value in current_index.items():
-            if value >= first_tier_threshold:
-                first_tier[key] = value
-            elif value >= second_tier_threshold:
-                second_tier[key] = value
-            else:
-                third_tier[key] = value
+        first_tier = defaultdict(dict)
+        second_tier = defaultdict(dict)
+        third_tier = defaultdict(dict)
+        for key, doc_tf in current_index.items():
+            for doc_id, value in doc_tf.items():
+                if value >= first_tier_threshold:
+                    first_tier[key][doc_id] = value
+                elif value >= second_tier_threshold:
+                    second_tier[key][doc_id] = value
+                else:
+                    third_tier[key][doc_id] = value
         return {
             "first_tier": first_tier,
             "second_tier": second_tier,
