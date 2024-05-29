@@ -1,6 +1,7 @@
 from collections import defaultdict
-from preprocess import Preprocessor
-from scorer import Scorer
+
+from utility.preprocess import Preprocessor
+from utility.scorer import Scorer
 from indexer.indexes_enum import Indexes, Index_types
 from indexer.index_reader import Index_reader
 
@@ -11,7 +12,7 @@ class SearchEngine:
         Initializes the search engine.
 
         """
-        path = '/index'
+        path = '/indexes'
         self.document_indexes = {
             Indexes.STARS: Index_reader(path, Indexes.STARS),
             Indexes.GENRES: Index_reader(path, Indexes.GENRES),
@@ -176,12 +177,13 @@ class SearchEngine:
             The scores of the documents.
         alpha : float, optional
             The parameter used in bayesian smoothing method. Defaults to 0.5.
-        lamda : float, optional
+        lambda : float, optional
             The parameter used in some smoothing methods to balance between the document
             probability and the collection probability. Defaults to 0.5.
         """
-        # TODO
-        pass
+        for field in weights.keys():
+            scorer = Scorer(self.document_indexes[field].index, len(self.document_lengths_index[field].index))
+            scores[field] = scorer.compute_scores_with_unigram_model(query, smoothing_method, self.document_lengths_index[field].index, alpha, lamda)
 
     def merge_scores(self, scores1, scores2):
         """
