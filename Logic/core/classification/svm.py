@@ -2,8 +2,8 @@ import numpy as np
 from sklearn.metrics import classification_report
 from sklearn.svm import SVC
 
-from .basic_classifier import BasicClassifier
-from .data_loader import ReviewLoader
+from Logic.core.classification.basic_classifier import BasicClassifier
+from Logic.core.classification.data_loader import ReviewLoader
 
 
 class SVMClassifier(BasicClassifier):
@@ -21,7 +21,7 @@ class SVMClassifier(BasicClassifier):
         y: np.ndarray
             The real class label for each doc
         """
-        pass
+        self.model.fit(x, y)
 
     def predict(self, x):
         """
@@ -35,7 +35,7 @@ class SVMClassifier(BasicClassifier):
             Return the predicted class for each doc
             with the highest probability (argmax)
         """
-        pass
+        return self.model.predict(x)
 
     def prediction_report(self, x, y):
         """
@@ -50,7 +50,7 @@ class SVMClassifier(BasicClassifier):
         str
             Return the classification report
         """
-        pass
+        return classification_report(y, self.predict(x))
 
 
 # F1 accuracy : 78%
@@ -58,4 +58,12 @@ if __name__ == '__main__':
     """
     Fit the model with the training data and predict the test data, then print the classification report
     """
-    pass
+    loader = ReviewLoader('../IMDB Dataset.csv')
+    loader.load_data()
+    loader.embeddings = np.load('embeddings.npy')
+
+    X_train, X_test, y_train, y_test = loader.split_data()
+
+    svm = SVMClassifier()
+    svm.fit(X_train, y_train)
+    print(svm.prediction_report(X_test, y_test))
