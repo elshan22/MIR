@@ -12,7 +12,7 @@ class SearchEngine:
         Initializes the search engine.
 
         """
-        path = 'indexes/'
+        path = '../Logic/core/Indexes/'
         self.document_indexes = {
             Indexes.STARS: Index_reader(path, Indexes.STARS),
             Indexes.GENRES: Index_reader(path, Indexes.GENRES),
@@ -134,7 +134,7 @@ class SearchEngine:
                         scorer.compute_socres_with_okapi_bm25(query, avdl, self.document_lengths_index[field].index))
                 else:
                     scores[field] = self.merge_scores(scores[field], scorer.compute_scores_with_vector_space_model(query, method))
-                if scores[field] >= max_results: break
+                if len(scores[field]) >= max_results: break
 
     def find_scores_with_safe_ranking(self, query, method, weights, scores):
         """
@@ -210,13 +210,13 @@ class SearchEngine:
 
 if __name__ == '__main__':
     search_engine = SearchEngine()
-    query = "spider man in wonderland"
-    method = "ltn.lnc"
+    query = "leonardo dicaprio"
+    method = "unigram"
     weights = {
         Indexes.STARS: 1,
         Indexes.GENRES: 1,
         Indexes.SUMMARIES: 1
     }
-    result = search_engine.search(query, method, weights)
+    result = search_engine.search(query, method, weights, safe_ranking=False)
 
     print(result)
