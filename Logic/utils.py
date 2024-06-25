@@ -45,6 +45,7 @@ def search(
     unigram_smoothing=None,
     alpha=None,
     lamda=None,
+    safe_ranking=True
 ):
     """
     Finds relevant documents to query
@@ -78,7 +79,8 @@ def search(
                Indexes.GENRES: weights[1],
                Indexes.SUMMARIES: weights[2]}
     return search_engine.search(
-        query, method, weights, max_results=max_result_count, safe_ranking=True
+        query, method, weights, max_results=max_result_count, safe_ranking=safe_ranking, smoothing_method=unigram_smoothing,
+        alpha=alpha, lamda=lamda
     )
 
 
