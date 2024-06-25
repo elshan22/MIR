@@ -1,7 +1,7 @@
 import math
 
 import numpy as np
-from collections import Counter
+from collections import Counter, defaultdict
 
 
 class Scorer:    
@@ -16,7 +16,9 @@ class Scorer:
         number_of_documents : int
             The number of documents in the index.
         """
-        self.index = index
+        self.index = defaultdict(dict)
+        for k, v in index.items():
+            self.index[k] = v
         self.idf = {}
         self.N = number_of_documents
 
@@ -202,8 +204,8 @@ class Scorer:
         result = 0
         for term in query:
             if term not in self.index: continue
-            result += self.get_idf(term) * (k1 + 1) * self.index[term][document_id] / (k1 * (1 + b *
-                (document_lengths[document_id]/average_document_field_length - 1)) + self.index[term][document_id])
+            result += self.get_idf(term) * (k1 + 1) * self.index[term].get(document_id, 0) / (k1 * (1 + b *
+                (document_lengths[document_id]/average_document_field_length - 1)) + self.index[term].get(document_id, 0))
         return result
 
     def compute_scores_with_unigram_model(
@@ -263,14 +265,17 @@ class Scorer:
             The Unigram score of the document for the query.
         """
         score = 0
-        collection = {term: sum(self.index[term].values()) for term in self.index}
+        if document_lengths[document_id] == 0: return 0
+        collection = defaultdict(int)
+        for term in self.index:
+            collection[term] = sum(self.index[term].values())
         collection_size = sum(collection.values())
         for term in query.split():
             if smoothing_method == 'bayes':
-                score += math.log((self.index[term][document_id] + alpha) / (document_lengths[document_id] + alpha * len(self.index)))
+                score += math.log((self.index[term].get[document_id] + alpha) / (document_lengths[document_id] + alpha * len(self.index)))
             elif smoothing_method == 'naive':
-                score += math.log((self.index[term][document_id] + 1) / (document_lengths[document_id] + len(self.index)))
+                score += math.log((self.index[term].get(document_id, 0) + 1) / (document_lengths[document_id] + len(self.index)))
             else:
-                score += (lamda * (self.index[term][document_id] / document_lengths[document_id]) +\
+                score += (lamda * (self.index[term].get(document_id, 0) / document_lengths[document_id]) +\
                                       (1 - lamda) * (collection[term] / collection_size))
         return score
