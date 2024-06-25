@@ -1,9 +1,9 @@
 from collections import defaultdict
 
-from utility.preprocess import Preprocessor
-from utility.scorer import Scorer
-from indexer.indexes_enum import Indexes, Index_types
-from indexer.index_reader import Index_reader
+from Logic.core.utility.preprocess import Preprocessor
+from Logic.core.utility.scorer import Scorer
+from Logic.core.indexer.indexes_enum import Indexes, Index_types
+from Logic.core.indexer.index_reader import Index_reader
 
 
 class SearchEngine:
@@ -12,7 +12,7 @@ class SearchEngine:
         Initializes the search engine.
 
         """
-        path = '/indexes'
+        path = 'indexes/'
         self.document_indexes = {
             Indexes.STARS: Index_reader(path, Indexes.STARS),
             Indexes.GENRES: Index_reader(path, Indexes.GENRES),
@@ -69,7 +69,7 @@ class SearchEngine:
 
         scores = {}
         if method == 'unigram':
-            self.find_scores_with_unigram_model(query, smoothing_method, weights, scores, alpha, lamda)
+            self.find_scores_with_unigram_model(' '.join(query), smoothing_method, weights, scores, alpha, lamda)
         elif safe_ranking:
             self.find_scores_with_safe_ranking(query, method, weights, scores)
         else:
@@ -211,7 +211,7 @@ class SearchEngine:
 if __name__ == '__main__':
     search_engine = SearchEngine()
     query = "spider man in wonderland"
-    method = "lnc.ltc"
+    method = "ltn.lnc"
     weights = {
         Indexes.STARS: 1,
         Indexes.GENRES: 1,
