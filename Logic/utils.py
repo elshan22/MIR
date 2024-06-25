@@ -1,13 +1,16 @@
 from typing import Dict, List
 
-from Logic.core.preprocess import Preprocessor
-from core.search import SearchEngine
-from core.spell_correction import SpellCorrection
-from core.snippet import Snippet
-from core.indexer.indexes_enum import Indexes, Index_types
+import pandas as pd
+
+from Logic.core.utility.preprocess import Preprocessor
+from Logic.core.search import SearchEngine
+from Logic.core.utility.spell_correction import SpellCorrection
+from Logic.core.utility.snippet import Snippet
+from Logic.core.indexer.indexes_enum import Indexes, Index_types
 import json
 
-movies_dataset = json.load(open('core/indexer/Index/documents_indices.json'))
+movies_dataset = json.load(open('../Logic/core/Indexes/documents_index.json'))
+all_documents = pd.DataFrame(movies_dataset).T['summaries'].dropna().apply(lambda x: ' '.join(x)).tolist()
 search_engine = SearchEngine()
 
 
@@ -39,6 +42,9 @@ def search(
     weights: list = [0.3, 0.3, 0.4],
     should_print=False,
     preferred_genre: str = None,
+    unigram_smoothing=None,
+    alpha=None,
+    lamda=None,
 ):
     """
     Finds relevant documents to query
