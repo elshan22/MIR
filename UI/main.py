@@ -24,7 +24,7 @@ class color(Enum):
 
 
 def get_top_x_movies_by_rank(x: int, results: list):
-    path = "../Logic/core/index/"  # Link to the index folder
+    path = "../Logic/core/indexes/"  # Link to the index folder
     document_index = Index_reader(path, Indexes.DOCUMENTS)
     corpus = []
     root_set = []
@@ -62,7 +62,7 @@ def get_summary_with_snippet(movie_info, query):
 
 
 def search_time(start, end):
-    st.success("Search took: {:.6f} milli-seconds".format((end - start) * 1e3))
+    st.success("Search took: {:.2f} milliseconds".format((end - start) * 1e3))
 
 
 def search_handling(
@@ -71,6 +71,7 @@ def search_handling(
     search_max_num,
     search_weights,
     search_method,
+    safe_ranking,
     unigram_smoothing,
     alpha,
     lamda,
@@ -88,45 +89,20 @@ def search_handling(
                 f"<span style='color:{random.choice(list(color)).value}'>{actors_}</span>",
                 unsafe_allow_html=True,
             )
-            st.divider()
+            st.markdown("---")
 
         st.markdown(f"**Top {num_filter_results} Movies:**")
         for i in range(len(top_movies)):
-            card = st.columns([3, 1])
             info = utils.get_movie_by_id(top_movies[i], utils.movies_dataset)
-            with card[0].container():
-                st.title(info["title"])
-                st.markdown(f"[Link to movie]({info['URL']})")
-                st.markdown(
-                    f"<b><font size = '4'>Summary:</font></b> {get_summary_with_snippet(info, search_term)}",
-                    unsafe_allow_html=True,
-                )
+            st.markdown(f"## {i+1}. {info['title']}")
+            st.write(f"### **Stars:** {', '.join(info['stars'])}")
+            st.write(f'**Summary:** {info["first_page_summary"]}')
 
-            with st.container():
-                st.markdown("**Directors:**")
-                num_authors = len(info["directors"])
-                for j in range(num_authors):
-                    st.text(info["directors"][j])
-
-            with st.container():
-                st.markdown("**Stars:**")
-                num_authors = len(info["stars"])
-                stars = "".join(star + ", " for star in info["stars"])
-                st.text(stars[:-2])
-
-                topic_card = st.columns(1)
-                with topic_card[0].container():
-                    st.write("Genres:")
-                    num_topics = len(info["genres"])
-                    for j in range(num_topics):
-                        st.markdown(
-                            f"<span style='color:{random.choice(list(color)).value}'>{info['genres'][j]}</span>",
-                            unsafe_allow_html=True,
-                        )
-            with card[1].container():
-                st.image(info["Image_URL"], use_column_width=True)
-
-            st.divider()
+            st.markdown(
+                f'<span style="color:{random.choice(list(color)).value}"><a href="{info["URL"]}">Link to movie</a></span>',
+                unsafe_allow_html=True,
+            )
+            st.markdown("---")
         return
 
     if search_button:
@@ -147,10 +123,10 @@ def search_handling(
                 unigram_smoothing=unigram_smoothing,
                 alpha=alpha,
                 lamda=lamda,
+                safe_ranking=safe_ranking
             )
             if "search_results" in st.session_state:
                 st.session_state["search_results"] = result
-            print(f"Result: {result}")
             end_time = time.time()
             if len(result) == 0:
                 st.warning("No results found!")
@@ -158,43 +134,23 @@ def search_handling(
 
             search_time(start_time, end_time)
 
+        st.markdown("<div class='grid-container'>", unsafe_allow_html=True)
         for i in range(len(result)):
-            card = st.columns([3, 1])
             info = utils.get_movie_by_id(result[i][0], utils.movies_dataset)
-            with card[0].container():
-                st.title(info["title"])
-                st.markdown(f"[Link to movie]({info['URL']})")
-                st.write(f"Relevance Score: {result[i][1]}")
-                st.markdown(
-                    f"<b><font size = '4'>Summary:</font></b> {get_summary_with_snippet(info, search_term)}",
-                    unsafe_allow_html=True,
-                )
-
-            with st.container():
-                st.markdown("**Directors:**")
-                num_authors = len(info["directors"])
-                for j in range(num_authors):
-                    st.text(info["directors"][j])
-
-            with st.container():
-                st.markdown("**Stars:**")
-                num_authors = len(info["stars"])
-                stars = "".join(star + ", " for star in info["stars"])
-                st.text(stars[:-2])
-
-                topic_card = st.columns(1)
-                with topic_card[0].container():
-                    st.write("Genres:")
-                    num_topics = len(info["genres"])
-                    for j in range(num_topics):
-                        st.markdown(
-                            f"<span style='color:{random.choice(list(color)).value}'>{info['genres'][j]}</span>",
-                            unsafe_allow_html=True,
-                        )
-            with card[1].container():
-                st.image(info["Image_URL"], use_column_width=True)
-
-            st.divider()
+            st.markdown(f"""
+                            <a href="{info['URL']}" style="text-decoration: none; color: inherit;">
+                            <div class='result-card'>
+                                <h3>{info['title']}</h3>
+                                <img src="{info['Image_URL']}" alt="Movie Image">
+                                <p><b>Relevance Score:</b> {result[i][1]}</p>
+                                <p><b>Summary:</b> {get_summary_with_snippet(info, search_term)}</p>
+                                <p><b>Directors:</b> {', '.join(info['directors']) if info['directors'] else ''}</p>
+                                <p><b>Stars:</b> {', '.join(info['stars']) if info['stars'] else ''}</p>
+                                <p><b>Genres:</b> {', '.join(info['genres']) if info['genres'] else ''}</p>
+                            </div>
+                            </a>
+                            """, unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
         st.session_state["search_results"] = result
         if "filter_state" in st.session_state:
@@ -205,86 +161,112 @@ def search_handling(
 
 
 def main():
-    st.title("Search Engine")
-    st.write(
-        "This is a simple search engine for IMDB movies. You can search through IMDB dataset and find the most relevant movie to your search terms."
-    )
-    st.markdown(
-        '<span style="color:yellow">Developed By: MIR Team at Sharif University</span>',
-        unsafe_allow_html=True,
-    )
+    st.set_page_config(page_title="IMDB Movie Search Engine", layout="wide")
 
-    search_term = st.text_input("Seacrh Term")
-    with st.expander("Advanced Search"):
-        search_max_num = st.number_input(
-            "Maximum number of results", min_value=5, max_value=100, value=10, step=5
-        )
-        weight_stars = st.slider(
-            "Weight of stars in search",
-            min_value=0.0,
-            max_value=1.0,
-            value=1.0,
-            step=0.1,
-        )
+    st.markdown("""
+        <style>
+        body {
+            background-color: #141414;
+            color: #f5c518;
+        }
+        .main-header {
+            text-align: center;
+            margin-bottom: 1em;
+        }
+        .sub-header {
+            font-size: 1.2em;
+            color: #f5c518;
+            text-align: center;
+            margin-bottom: 1em;
+        }
+        .credits {
+            color: #f5c518;
+            text-align: center;
+            margin-bottom: 2em;
+        }
+        .search-bar {
+            width: 50%;
+            margin: 0 auto;
+        }
+        .result-card {
+            background-color: #555555;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 1em;
+            border: 1px solid #ddd;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .result-card h3 {
+            color: #333;
+        }
+        .result-card p, .result-card a {
+            color: #333;
+        }
+        .result-card a {
+            text-decoration: none;
+            color: #f5c518;
+        }
+        .result-card img {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            margin-bottom: 1em;
+            width: 100%;
+            height: auto;
+            max-width: 200px;
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1em;
+            padding: 1em;
+        }
+        </style>
+        """, unsafe_allow_html=True)
 
-        weight_genres = st.slider(
-            "Weight of genres in search",
-            min_value=0.0,
-            max_value=1.0,
-            value=1.0,
-            step=0.1,
-        )
+    st.markdown("""
+        <div class='main-header'>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/6/69/IMDB_Logo_2016.svg" alt="IMDb Logo" width="200">
+        </div>
+        """, unsafe_allow_html=True)
 
-        weight_summary = st.slider(
-            "Weight of summary in search",
-            min_value=0.0,
-            max_value=1.0,
-            value=1.0,
-            step=0.1,
-        )
-        slider_ = st.slider("Select the number of top movies to show", 1, 10, 5)
+    st.markdown("<div class='sub-header'>Find the most relevant movies based on your search terms</div>",
+                unsafe_allow_html=True)
 
-        search_weights = [weight_stars, weight_genres, weight_summary]
-        search_method = st.selectbox(
-            "Search method", ("ltn.lnn", "ltc.lnc", "OkapiBM25", "unigram")
-        )
+    with st.container():
+        search_term = st.text_input("Enter your search term here...", "", key="search")
+        search_button = st.button("Search", key="search_btn")
+        st.markdown("---")
 
-        unigram_smoothing = None
-        alpha, lamda = None, None
-        if search_method == "unigram":
-            unigram_smoothing = st.selectbox(
-                "Smoothing method",
-                ("naive", "bayes", "mixture"),
-            )
-            if unigram_smoothing == "bayes":
-                alpha = st.slider(
-                    "Alpha",
-                    min_value=0.0,
-                    max_value=1.0,
-                    value=0.5,
-                    step=0.1,
-                )
-            if unigram_smoothing == "mixture":
-                alpha = st.slider(
-                    "Alpha",
-                    min_value=0.0,
-                    max_value=1.0,
-                    value=0.5,
-                    step=0.1,
-                )
-                lamda = st.slider(
-                    "Lambda",
-                    min_value=0.0,
-                    max_value=1.0,
-                    value=0.5,
-                    step=0.1,
-                )
+    unigram_smoothing, alpha, lamda = None, None, None
+
+    with st.expander("Advanced Search Options"):
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            weight_stars = st.slider("Weight of stars", 0.0, 1.0, 1.0, step=0.1)
+            weight_genres = st.slider("Weight of genres", 0.0, 1.0, 1.0, step=0.1)
+            weight_summary = st.slider("Weight of summary", 0.0, 1.0, 1.0, step=0.1)
+
+        with col2:
+            search_max_num = st.number_input("Max results", min_value=5, max_value=100, value=10, step=5)
+            search_method = st.selectbox("Search method", ["ltn.lnn", "ltc.lnc", "OkapiBM25", "unigram"])
+            safe_ranking = st.checkbox("Safe ranking", value=True)
+
+        with col3:
+            if search_method == "unigram":
+                unigram_smoothing = st.selectbox("Smoothing method", ["naive", "bayes", "mixture"])
+                if unigram_smoothing in ["bayes", "mixture"]:
+                    alpha = st.slider("Alpha", 0.0, 1.0, 0.5, step=0.1)
+                if unigram_smoothing == "mixture":
+                    lamda = st.slider("Lambda", 0.0, 1.0, 0.5, step=0.1)
+
+    filter_button = st.button("Filter Movies by Ranking", key="filter_btn")
+    slider_ = st.selectbox("Select number of top movies to show", [1, 5, 10, 20, 50, 100])
+    search_weights = [weight_stars, weight_genres, weight_summary]
 
     if "search_results" not in st.session_state:
         st.session_state["search_results"] = []
-
-    search_button = st.button("Search!")
-    filter_button = st.button("Filter movies by ranking")
 
     search_handling(
         search_button,
@@ -292,6 +274,7 @@ def main():
         search_max_num,
         search_weights,
         search_method,
+        safe_ranking,
         unigram_smoothing,
         alpha,
         lamda,
